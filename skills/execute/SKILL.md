@@ -15,22 +15,23 @@ Run a goal or plan to completion via the Workflow tool. Each task runs in an iso
 /execute --effort high "migrate the database schema"
 ```
 
-**Effort** (default: `medium`) sets the subagent model tier:
+**Effort** (default: `medium`) controls execution depth:
 
-| Flag | Model |
-|------|-------|
-| `--effort low` | haiku |
-| `--effort medium` | sonnet |
-| `--effort high` | opus |
-| `--effort max` | opus |
+| Flag | Behavior |
+|------|----------|
+| `--effort low` | execute only, skip verification |
+| `--effort medium` | execute + basic sanity checks |
+| `--effort high` | execute + full verification and retry on doubt |
+
+Model per task is chosen by complexity: `sonnet` for most tasks, `opus` for deep reasoning or architecture decisions, `haiku` for simple mechanical work.
 
 ## Workflow structure
 
 Call the Workflow tool with an inline script containing three phases:
 
 **Plan** — one agent derives an ordered task list from the goal or plan file.
-Schema: `{ tasks: [{ id, description, dependsOn: string[] }] }`.
-If a plan file path was given, extract tasks from it rather than deriving them.
+Schema: `{ tasks: [{ id, description, dependsOn: string[], model: "haiku"|"sonnet"|"opus" }] }`.
+The planner assigns a model to each task based on complexity. If a plan file path was given, extract tasks from it rather than deriving them.
 
 **Execute** — loop over tasks sequentially so each agent receives prior context.
 Per-agent context block:
@@ -39,7 +40,7 @@ Per-agent context block:
 - Relevant file paths (not contents)
 - Destructive-op guard: "Pause and require explicit user confirmation before `rm -rf`, force-push, or DB mutations."
 
-Use the model from the effort flag. Each agent returns `{ summary: string, blocked: boolean }`.
+Use the model assigned by the planner. Each agent returns `{ summary: string, blocked: boolean }`.
 
 **Report** — return: tasks completed, tasks blocked with reasons, key decisions made.
 
