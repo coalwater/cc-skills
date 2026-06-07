@@ -10,4 +10,6 @@ Read the referenced document(s), then interview me relentlessly — one question
 
 If a question can be answered by re-reading the doc or exploring the codebase, do that instead of asking.
 
+When I make a claim, verify it against the code before accepting it. If the code contradicts what I said or what the doc says, surface the conflict explicitly before moving on.
+
 When the session ends or I ask to save: write a concise summary of answers and decisions to the target file (or a new file if none was specified).
