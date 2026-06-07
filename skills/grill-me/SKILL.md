@@ -7,4 +7,4 @@ Interview me relentlessly about every aspect of this plan until we reach a share
 
 Ask the questions one at a time.
 
-If a question can be answered by exploring the codebase, explore the codebase instead.
+If a question can be answered by exploring the codebase, explore the codebase instead. For deeper verification — a broken claim, an open question, or a scope that needs enumeration — invoke the ground-truth skill.
