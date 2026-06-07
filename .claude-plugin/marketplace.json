@@ -1,0 +1,17 @@
+{
+  "name": "cc-skills",
+  "owner": {
+    "name": "Mohammad AbuShady"
+  },
+  "description": "A collection of skills I actually use, stripped to the bare minimum.",
+  "plugins": [
+    {
+      "name": "cc-skills",
+      "source": {
+        "source": "github",
+        "repo": "coalwater/cc-skills"
+      },
+      "description": "A collection of skills I actually use, stripped to the bare minimum."
+    }
+  ]
+}
