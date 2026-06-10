@@ -87,16 +87,33 @@ sess_pct=""
 proj_display=""
 proj_color="$c_green"
 reset_display=""
+wait_display=""
 if [ -n "$sess_util" ]; then
   sess_pct=$(awk -v u="$sess_util" 'BEGIN { printf "%.0f", u * 100 }')
 
   if [ -n "$proj_end" ]; then
     proj_int=$(awk -v p="$proj_end" 'BEGIN { printf "%.0f", p }')
-    proj_display=$(printf '%s%%' "$proj_int")
-    if [ "$proj_int" -ge 90 ]; then
-      resets_int=$(awk -v r="${sess_resets_min:-999}" 'BEGIN { printf "%.0f", r }')
-      if [ "$resets_int" -le 30 ]; then proj_color="$c_yellow"
-      else proj_color="$c_red"
+    if [ "$proj_int" -ge 100 ] && [ -n "$sess_resets_min" ]; then
+      # Will hit limit before reset — compute how long we'll be blocked
+      wait_display=$(awk -v u="$sess_util" -v p="$proj_end" -v r="$sess_resets_min" 'BEGIN {
+        rate = (p/100 - u) / r
+        if (rate > 0) {
+          t100 = (1.0 - u) / rate
+          wait = r - t100
+          if (wait < 0) wait = 0
+          mi = int(wait + 0.5); h = int(mi / 60); rm = mi % 60
+          if (h > 0) printf "%dh %dm", h, rm
+          else printf "%dm", mi
+        }
+      }')
+      proj_color="$c_red"
+    else
+      proj_display=$(printf '%s%%' "$proj_int")
+      if [ "$proj_int" -ge 90 ]; then
+        resets_int=$(awk -v r="${sess_resets_min:-999}" 'BEGIN { printf "%.0f", r }')
+        if [ "$resets_int" -le 30 ]; then proj_color="$c_yellow"
+        else proj_color="$c_red"
+        fi
       fi
     fi
   fi
@@ -157,8 +174,11 @@ printf "${c_brown}%s${c_reset}" "$model"
 
 if [ -n "$sess_pct" ]; then
   printf "  ${c_dim}│${c_reset}  ${proj_color}${c_bold}%3s%%${c_reset}" "$sess_pct"
-  [ -n "$proj_display" ] && \
+  if [ -n "$wait_display" ]; then
+    printf "  ${c_red}(%s)${c_reset}" "$wait_display"
+  elif [ -n "$proj_display" ]; then
     printf " ${proj_color}→ ~%4s${c_reset}" "$proj_display"
+  fi
   [ -n "$reset_display" ] && \
     printf "  ${c_dim}↺ %6s${c_reset}" "$reset_display"
 fi
