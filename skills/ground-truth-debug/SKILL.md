@@ -5,7 +5,7 @@ description: Use when something is broken, throwing, failing, flaky, or regresse
 
 # Ground Truth Debug
 
-The debug track of **REQUIRED BACKGROUND:** ground-truth. The five principles apply; this skill adds the debugging procedure.
+The debug track of **REQUIRED BACKGROUND:** ground-truth. The ground rules (cc-skills block in CLAUDE.md) apply; this skill adds the debugging procedure.
 
 ## The Iron Law
 

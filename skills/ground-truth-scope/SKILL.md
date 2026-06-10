@@ -5,7 +5,7 @@ description: Use when a task acts on a bounded set you could enumerate as data â
 
 # Ground Truth Scope
 
-The scope track of **REQUIRED BACKGROUND:** ground-truth. The five principles apply; this skill adds the discipline for bounded, data-defined work.
+The scope track of **REQUIRED BACKGROUND:** ground-truth. The ground rules (cc-skills block in CLAUDE.md) apply; this skill adds the discipline for bounded, data-defined work.
 
 ## Core principle
 

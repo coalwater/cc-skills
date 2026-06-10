@@ -9,6 +9,7 @@
 - Don't guess. Establish ground truth, then act. No "probably/likely/I assume" as load-bearing reasoning.
 - Surface assumptions explicitly — name them, verify before building on them.
 - Hypotheses falsifiable, tested one variable at a time.
+- Scale effort to the stakes — don't under-investigate a claim that forces a rewrite, don't over-investigate a trivial one.
 - Verify against reality before concluding. Evidence before assertions.
 - Red flags — STOP: proposing a fix/plan/answer without reproduced or observed evidence; grepping to discover a scope the user could hand over as data; fusing diagnosis with the fix.
 - For full tracks (debug/investigate/scope), invoke /ground-truth.

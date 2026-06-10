@@ -5,7 +5,7 @@ description: Use when you face an open question you must answer to decide or pro
 
 # Ground Truth Investigate
 
-The investigation track of **REQUIRED BACKGROUND:** ground-truth. The five principles apply; this skill adds the research procedure. Core stance: **don't guess, investigate — and don't over-investigate; scale effort to the question.**
+The investigation track of **REQUIRED BACKGROUND:** ground-truth. The ground rules (cc-skills block in CLAUDE.md) apply; this skill adds the research procedure. Core stance: **don't guess, investigate — and don't over-investigate; scale effort to the question.**
 
 If requirements themselves are unclear (WHAT to build), use brainstorming first. This skill is for HOW — answering questions you've already framed.
 
