@@ -175,7 +175,7 @@ printf "${c_brown}%s${c_reset}" "$model"
 if [ -n "$sess_pct" ]; then
   printf "  ${c_dim}│${c_reset}  ${proj_color}${c_bold}%3s%%${c_reset}" "$sess_pct"
   if [ -n "$wait_display" ]; then
-    printf "  ${c_red}(%s)${c_reset}" "$wait_display"
+    printf " ${c_red}→ 100%%  (%s)${c_reset}" "$wait_display"
   elif [ -n "$proj_display" ]; then
     printf " ${proj_color}→ ~%4s${c_reset}" "$proj_display"
   fi
