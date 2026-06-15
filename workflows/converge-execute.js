@@ -20,6 +20,9 @@ const approach = _args.approach || 'no approach specified — choose the simples
 const criteria = _args.criteria
 const guards = _args.guards || []  // never-cross lines (irreversible-harm filter)
 const MAX = _args.maxAttempts || 3
+// Agent model: default sonnet for this workflow; caller may override via args.model.
+// (agent() supports `model` but has no reasoning-effort option, so effort is not set here.)
+const model = _args.model || 'sonnet'
 
 const filter = [
   ...criteria.map(c => `MUST PASS: ${c}`),
@@ -94,7 +97,7 @@ while (!passed && attempt < MAX) {
     `TASK:\n${task}\n\nCHOSEN APPROACH:\n${approach}\n\nFILTER (every line must hold):\n${filter.map((f, i) => `${i + 1}. ${f}`).join('\n')}\n\n` +
     (feedback ? `PRIOR ATTEMPT REFUTED. Fix these:\n${feedback}\n\n` : '') +
     `Implement to satisfy the whole filter. Return code, a one-line claim, honest gaps, and howToRun — the exact command(s) that verify this against the project's real signal (tests/lint/typecheck), or NONE if the task has no executable signal.`,
-    { label: `implement#${attempt}`, phase: 'Converge', schema: SOLUTION }
+    { label: `implement#${attempt}`, phase: 'Converge', schema: SOLUTION, model }
   )
   if (!solution) { feedback = 'implementer returned nothing'; continue }
 
@@ -105,7 +108,7 @@ while (!passed && attempt < MAX) {
     `CANDIDATE:\n\`\`\`\n${solution.code}\n\`\`\`\n\n` +
     `Run strictly inside the sandbox (cwd only, no external network); NEVER disable the sandbox. If the verification command would be DENIED by the sandbox (write/delete/spend/network outside cwd) OR would cross any of these MUST-NEVER guards, do NOT run — set guardBlocked=true (this escalates to a human; do NOT silently downgrade to unverifiable):\n${guards.map(g => `- ${g}`).join('\n') || '- (none)'}\n\n` +
     `If there is no executable signal for this task at all, set unverifiable=true and ran=NONE. Otherwise capture the exit code and the failure-relevant output verbatim.`,
-    { label: `runner#${attempt}`, phase: 'Converge', schema: SIGNAL }
+    { label: `runner#${attempt}`, phase: 'Converge', schema: SIGNAL, model }
   )
 
   // A3-5: a guard-blocked verification command escalates to a human — never a silent unverifiable.
@@ -134,7 +137,7 @@ while (!passed && attempt < MAX) {
       `${lens.prompt}\n\nFILTER (numbered — this is your checklist spine):\n${filter.map((f, i) => `${i + 1}. ${f}`).join('\n')}\n\n` +
       `${signalNote}\n\nCANDIDATE:\n\`\`\`\n${solution.code}\n\`\`\`\nClaim: ${solution.claim}\nAdmitted gaps: ${solution.gaps}\n\n` +
       `Check EACH filter line. Mark a line 'fail' ONLY if your evidence cites a concrete failing trace (a specific input + expected vs actual, or the exact violated text / signal line). If you cannot produce such a trace, mark it 'unverifiable' — NOT fail, NOT pass. Mark 'pass' only with positive evidence (the external signal counts).`,
-      { label: `skeptic:${lens.key}#${attempt}`, phase: 'Converge', schema: VERDICT }
+      { label: `skeptic:${lens.key}#${attempt}`, phase: 'Converge', schema: VERDICT, model }
     )
   ))).filter(Boolean)
 

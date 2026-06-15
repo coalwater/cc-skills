@@ -1,6 +1,7 @@
 ---
 name: dispatch
 description: Orchestrate a task to a verified result with minimum human attention. Grills you to set the oracle (goal + filter), classifies the failure lane, then chains the research → ideate → converge-execute workflows — inserting grill checkpoints only at high-leverage seams. Use when the user says "/dispatch", "dispatch this", "run this end-to-end", or wants a task taken from fuzzy goal to verified output without babysitting.
+model: opus
 ---
 
 # dispatch — the orchestrator
@@ -59,6 +60,33 @@ can never reach a gate as `[]` and produce a vacuous pass. Required per workflow
 `task, criteria`. Optional fields (scopeIn, scopeOut, sourcesHint, approach, constraints,
 researchSummary, guards, maxAttempts) keep sensible defaults. A non-JSON string throws a parse
 error naming the workflow.
+
+**Model** — each workflow runs its `agent()` calls on `sonnet` by default. To override, pass
+`model` in `args` (e.g. `{ ..., model: 'opus' }`); it accepts any value the Workflow tool's
+`agent({ model })` accepts. The orchestrator (this skill) itself runs on `opus` (frontmatter).
+Leave the workflows at their sonnet default unless a task genuinely needs heavier reasoning —
+don't pass `model` just to match the orchestrator.
+
+### How to call (copy these — one line each)
+
+Call the **Workflow tool** with `name` + `args`. `name` is the verbatim workflow name (invariant
+I1). `args` is a JSON object; `criteria` and `guards` are **arrays of strings**, never one joined
+string. Pass each workflow ONLY its own fields (extra keys are ignored, missing required keys throw).
+
+```
+Workflow({ name: 'research',           args: { goal, scopeIn, scopeOut, sourcesHint } })
+Workflow({ name: 'criteria-adversary', args: { goal, criteria: ['…','…'], guards: ['…'] } })
+Workflow({ name: 'ideate',             args: { goal, criteria: ['…','…'], guards: ['…'], constraints, researchSummary } })
+Workflow({ name: 'converge-execute',   args: { task, approach, criteria: ['…','…'], guards: ['…'], maxAttempts } })
+```
+
+Required (throws if missing/empty): research→`goal`; criteria-adversary & ideate→`goal,criteria`;
+converge-execute→`task,criteria`. Everything else is optional with a default. Heavier reasoning?
+Add `model: 'opus'` to that one call's `args`. Common mistakes to avoid:
+- passing `criteria` as a single string (`"a; b"`) instead of `['a','b']` — gates then see one fat line;
+- routing fields to the wrong workflow (e.g. `task` to ideate, which wants `goal`);
+- dropping `criteria` on a gate workflow — it throws rather than passing vacuously, by design;
+- hand-rolling a script instead of calling by name (I1/I2 violation).
 
 ## Procedure
 

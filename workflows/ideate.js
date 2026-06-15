@@ -21,6 +21,9 @@ const criteria = _args.criteria
 const guards = _args.guards || []  // never-cross lines — used to fail decisionNeeded OPEN
 const constraints = _args.constraints || 'none stated'
 const researchSummary = _args.researchSummary || 'none provided'
+// Agent model: default sonnet for this workflow; caller may override via args.model.
+// (agent() supports `model` but has no reasoning-effort option, so effort is not set here.)
+const model = _args.model || 'sonnet'
 
 const IDEA = {
   type: 'object',
@@ -68,7 +71,7 @@ const ideas = (await parallel(STANCES.map((stance, i) => () =>
     `GOAL:\n${goal}\n\nACCEPTANCE CRITERIA:\n${criteria.map((c, n) => `${n + 1}. ${c}`).join('\n') || '(none yet)'}\n` +
     `CONSTRAINTS: ${constraints}\n\nRESEARCH SUMMARY:\n${researchSummary}\n\n` +
     `Your stance — ${stance}\n\nGenerate ONE concrete approach from this stance only. Commit to the stance even if it feels extreme — diversity is the job. Give pros, cons, and the main failure mode.`,
-    { label: `idea#${i}`, phase: 'Generate', schema: IDEA }
+    { label: `idea#${i}`, phase: 'Generate', schema: IDEA, model }
   )
 ))).filter(Boolean)
 
@@ -79,7 +82,7 @@ const judgment = await agent(
   `Rank them against the criteria. Recommend one. Name the single key tradeoff that separates the top options. ` +
   (guards.length ? `GUARDS (never-cross lines): ${guards.join('; ')}\nIf the chosen approach trades off against any guard, that is value-laden — set decisionNeeded=true.\n\n` : '') +
   `Then decide DECISION-NEEDED: set true ONLY if the choice is value-laden, irreversible, or not cleanly derivable from the criteria (a human should pick). Set false if the criteria make one approach clearly correct.`,
-  { label: 'judge', phase: 'Judge', schema: JUDGMENT }
+  { label: 'judge', phase: 'Judge', schema: JUDGMENT, model }
 )
 
 // A3-1 fix: decisionNeeded fails OPEN. The judge's self-rating can only CONFIRM a clean

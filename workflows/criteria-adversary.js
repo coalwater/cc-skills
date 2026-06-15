@@ -18,6 +18,9 @@ if (_missing.length) throw new Error(`[criteria-adversary] required field(s) mis
 const goal = _args.goal
 const criteria = _args.criteria
 const guards = _args.guards || []
+// Agent model: default sonnet for this workflow; caller may override via args.model.
+// (agent() supports `model` but has no reasoning-effort option, so effort is not set here.)
+const model = _args.model || 'sonnet'
 
 const filter = [
   ...criteria.map(c => `MUST PASS: ${c}`),
@@ -65,7 +68,7 @@ const results = (await parallel(STANCES.map((stance, i) => () =>
     `From this stance, construct ONE concrete solution sketch that satisfies EVERY filter line yet clearly violates the goal's intent (malicious compliance). If you genuinely cannot from this stance, say so honestly. ` +
     `Separately, flag any filter line that is untestable, contradictory, or ambiguous — but only with a concrete reason, never a vibe. ` +
     `Set breachFound=true ONLY if you actually produced a passing-but-wrong sketch; bare worries are ambiguities, not a breach.`,
-    { label: `adversary:${i}`, phase: 'Adversary', schema: BREACH }
+    { label: `adversary:${i}`, phase: 'Adversary', schema: BREACH, model }
   )
 ))).filter(Boolean)
 
