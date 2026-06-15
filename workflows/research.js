@@ -33,8 +33,8 @@ const SYNTHESIS = {
   type: 'object',
   required: ['summary', 'keyFacts', 'conflicts', 'gaps', 'stalenessFlags', 'spineHypothesis'],
   properties: {
-    summary: { type: 'string' },
-    keyFacts: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 400, description: 'ONE headline sentence only (<=400 chars) naming the single most load-bearing takeaway. Do NOT restate the facts or conflicts here — those go in keyFacts/conflicts. This is a title, not an abstract.' },
+    keyFacts: { type: 'array', items: { type: 'string' }, description: 'REQUIRED. The load-bearing facts, one per item, each with its source (file:line / doc). The summary is NOT a substitute — every fact the summary alludes to must appear here as its own item.' },
     conflicts: {
       type: 'array',
       items: {
@@ -72,8 +72,12 @@ phase('Synthesize')
 const synthesis = await agent(
   `RESEARCH GOAL:\n${goal}\nIN SCOPE: ${scopeIn} | OUT OF SCOPE: ${scopeOut}\n\n` +
   `Here are findings from ${findings.length} independent explorers:\n${JSON.stringify(findings, null, 2)}\n\n` +
-  `Consolidate into: a summary, the key facts, CONFLICTS where sources disagree, GAPS that block deciding, STALENESS flags for facts that look outdated, and a SPINE HYPOTHESIS — the minimal load-bearing units to achieve the goal. ` +
-  `Be ruthless about conflicts and gaps: those are what the human needs to adjudicate. Do not paper over disagreement.`,
+  `Consolidate into ALL of these required fields — do not skip any, even if they feel redundant with each other:\n` +
+  `- summary: ONE headline sentence (<=400 chars), a title only — NOT a place to dump the analysis.\n` +
+  `- keyFacts: every load-bearing fact as its own item, each with its source. This carries the facts; the summary does not.\n` +
+  `- conflicts: pairs of sources/facts that disagree, each with whyItMatters.\n` +
+  `- gaps: unknowns that block deciding. - stalenessFlags: facts that look outdated. - spineHypothesis: the minimal load-bearing units to achieve the goal.\n` +
+  `Put the substance in keyFacts and conflicts, not the summary. Be ruthless about conflicts and gaps: those are what the human needs to adjudicate. Do not paper over disagreement.`,
   { label: 'synthesize', phase: 'Synthesize', schema: SYNTHESIS }
 )
 
