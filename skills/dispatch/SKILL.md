@@ -41,18 +41,36 @@ make any deviation visible and self-flagging.
 - **I2 — No hand-execution.** The orchestrator produces ZERO solution output — no code, no edits,
   no deliverable. ALL implementation goes through `converge-execute`, even a one-line change. If
   you catch yourself about to Edit/Write a solution file, stop: that work belongs to the workflow.
-- **I3 — Mandatory routing ledger.** Before any autonomous work begins, emit the **plan ledger**:
-  every step with `FIRING` / `SKIP` and, for each SKIP, the exact trigger condition that licenses
-  it (e.g. "SKIP ideate — approach derivable from locked criteria"). Then act. A skip with no cited
-  trigger is illegal. The ledger fires on EVERY path (including the fast path) and MUST appear in
-  this conversation BEFORE the run's first `Workflow()` call — a first `Workflow()` call not preceded
-  by a visible ledger is an illegal run. (This is what stops a clean-looking step-7 ledger from being
-  fabricated after the fact: the up-front ledger is in the transcript, checkable without trusting the
-  summary.) Each `FIRED` entry MUST cite the workflow's returned envelope (converge-execute's
-  `status`/`attempts`/`trail`; research's keyFacts/conflicts; ideate's ranked/decisionNeeded) — a
-  `FIRED` claim with no envelope to cite is an I1/I2 violation, because hand-rolled or inlined work
-  produces no envelope. Reproduce the ledger, marked with what actually happened, in the final output
-  (step 7). Announcing a step as FIRING and then doing something else is the failure this prevents.
+- **I3 — Mandatory routing ledger (a durable task list).** Before any autonomous work begins,
+  realize the **plan ledger as a task list** — one task per phase (steps 3–6 plus any grill),
+  created via `TaskCreate` BEFORE the run's first `Workflow()` call. Each task's `description`
+  records `FIRING` or `SKIP`, and for each SKIP the exact trigger condition that licenses it
+  (e.g. "SKIP ideate — approach derivable from locked criteria"); a skip with no cited trigger is
+  illegal. The ledger fires on EVERY path (including the fast path — a ledger of SKIPs). A first
+  `Workflow()` call not preceded by the task ledger is an illegal run. The task list is the
+  **durable, out-of-transcript** routing record: it survives auto-compaction and is timestamped, so
+  a clean-looking step-7 ledger can't be fabricated after the fact. As each phase runs, `TaskUpdate`
+  it to `in_progress` then `completed`, and record the workflow's returned envelope in its
+  `metadata` (converge-execute's `status`/`attempts`/`trail`; research's keyFacts/conflicts;
+  ideate's ranked/decisionNeeded). A task marked `completed` with no cited envelope is an I1/I2
+  violation, because hand-rolled or inlined work produces no envelope. Step 7 reproduces the ledger
+  from the task list. Announcing a step as FIRING and then doing something else is the failure this
+  prevents.
+- **I4 — Durable oracle (survives compaction).** The oracle — `goal`, locked `criteria[]`,
+  `guards[]`, lane classification, and grill adjudications (which source won, what's stale, the
+  chosen approach + key tradeoff) — is the target every downstream gate verifies against. It MUST
+  NOT live only in this conversation, where auto-compaction may silently rewrite it (a watered-down
+  oracle corrupts every gate after it). At criteria-lock time, BEFORE the first `Workflow()` call,
+  write it to a durable file: `.dispatch/<slug>.md` in cwd (slug derived from the goal). Store
+  `criteria[]` and `guards[]` as a **verbatim fenced block** so they round-trip byte-exact. Then:
+  before passing `criteria`/`guards` into ANY workflow, RE-READ them from this file — never
+  reconstruct them from memory or a compacted summary. After any compaction, re-hydrate the oracle
+  from the file before continuing. When a grill changes the spine/criteria (the spine is dynamic),
+  update the file first, then proceed. The file is the single source of truth for the contract; the
+  I3 task list is the single source of truth for routing/progress. **Clean up on success:** once
+  step 7 presents a terminal `PASSED`/`PASSED_WITH_UNVERIFIED` result, delete the oracle file — it
+  has served its purpose. On `ESCALATE`, KEEP it: it's the state needed to resume or debug the
+  failed run.
 
 ## Workflow args contract
 
@@ -109,10 +127,15 @@ Before any autonomous work, extract from the user, in this conversation:
   of harm is a human decision, never made silently.
 Keep it tight. This aims the research so it doesn't wander. Do not skip it.
 
-### 2. Classify the lane
-**Emit the plan ledger (invariant I3) FIRST — on EVERY path, before any `Workflow()` call.**
-List steps 3–6, each marked `FIRING` or `SKIP + cited trigger`. No path is exempt: the fast
-path is itself a ledger of SKIPs. This is the commitment you execute against.
+### 2. Classify the lane — then write the oracle file + task ledger
+Two durable artifacts come BEFORE any `Workflow()` call, on EVERY path:
+- **Oracle file (invariant I4):** write `.dispatch/<slug>.md` with the goal, locked `criteria[]`
+  and `guards[]` (verbatim fenced block), lane, and grill adjudications. This is the contract
+  every gate re-reads from.
+- **Task ledger (invariant I3):** `TaskCreate` one task per phase (steps 3–6 + grills), each
+  marked `FIRING` or `SKIP + cited trigger`. No path is exempt: the fast path is itself a ledger
+  of SKIPs. This is the commitment you execute against; update each task as its phase runs.
+
 From the aiming grill, decide:
 - **Tolerable + obvious approach** → skip research and ideation. Go straight to step 6
   (`converge-execute`). This is the fast path; most small tasks live here. The fast path is
@@ -177,16 +200,20 @@ is guard-blocked). Never false success.
 
 ### 7. One output to follow
 Present a single consolidated result:
-- **Goal & locked criteria** (the oracle, as adjudicated)
-- **Routing ledger** (invariant I3): reproduce the up-front ledger from step 2 (emitted before the
-  first `Workflow()` call), now marked with what ACTUALLY happened per step — FIRED / SKIPPED +
-  trigger, each FIRED entry citing the workflow's returned envelope. Any divergence from the up-front
-  plan must be named here explicitly. If no up-front ledger was emitted, that absence is itself the
-  divergence to report. This is the deviation check.
+- **Goal & locked criteria** (the oracle, as adjudicated) — read back from the oracle file (I4),
+  not from memory.
+- **Routing ledger** (invariant I3): reproduce it from the task list created in step 2 (before the
+  first `Workflow()` call), each task showing what ACTUALLY happened — FIRED / SKIPPED + trigger,
+  each FIRED task citing the workflow's returned envelope from its metadata. Any divergence from the
+  up-front plan must be named here explicitly. If no task ledger was created up front, that absence
+  is itself the divergence to report. This is the deviation check.
 - **Approach chosen** + key tradeoff
 - **Result**: PASSED + solution, PASSED_WITH_UNVERIFIED + solution + the unverified lines to eyeball,
   or ESCALATE + what blocked it
 - **Verdict trail** available on request, not dumped
+
+After presenting a terminal `PASSED`/`PASSED_WITH_UNVERIFIED` result, delete the oracle file
+(I4 cleanup). On `ESCALATE`, leave it in place for resume/debug.
 
 If any phase ESCALATEs, stop and surface it — do not paper over a failure as success.
 
@@ -194,12 +221,12 @@ If any phase ESCALATEs, stop and surface it — do not paper over a failure as s
 
 | After          | Grill?                                                       | Next workflow / note                              |
 |----------------|--------------------------------------------------------------|---------------------------------------------------|
-| Aiming         | always (short); user ratifies guards + tolerability          | emit ledger (every path) → classify               |
-| Classify       | —                                                            | fast path → execute; filter-lane → research       |
+| Aiming         | always (short); user ratifies guards + tolerability          | → classify                                        |
+| Classify       | —                                                            | write oracle file (I4) + task ledger (I3), then: fast path → execute; filter-lane → research |
 | Research       | only if conflicts/gaps/staleness/fuzzy                       | criteria-adversary (filter-lane only)             |
 | Criteria-adv.  | only on a concrete Goodhart breach (else ack non-empty ambiguities on filter-lane) | ideate (if approach uncertain) |
 | Ideation       | only if `decisionNeeded` (fails open: near-tie / guard-touch)| converge-execute                                  |
 | Execute        | never (autonomous)                                           | PASSED / PASSED_WITH_UNVERIFIED / ESCALATE        |
 
 Fast path SKIPs research, criteria-adversary (trigger: single-line filter, no guards), and
-ideation — each recorded in the ledger with its cited trigger.
+ideation — each recorded as a task in the ledger with its cited trigger.

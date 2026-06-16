@@ -1,0 +1,2 @@
+# dispatch oracle/ledger scratch dir (durable run state, not source)
+.dispatch/
