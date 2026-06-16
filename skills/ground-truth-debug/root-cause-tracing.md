@@ -96,15 +96,32 @@ npm test 2>&1 | grep 'DEBUG git init'
 
 ## Finding Which Test Causes Pollution
 
-If something appears during tests but you don't know which test:
+If an artifact appears during tests (a stray `.git`, a leaked temp file, a mutated global) but you
+don't know which test creates it, run the tests one at a time and check for the artifact after each.
+The first test that produces it is the polluter.
 
-Use the bisection script `find-polluter.sh` in this directory:
+Parameterize two things: the **artifact** to detect (`ARTIFACT`) and the **test glob**
+(`TEST_GLOB`). Adapt the runner (`npm test`, `pytest`, `go test`) and the existence check to your
+stack — below detects a path with `-e`:
 
 ```bash
-./find-polluter.sh '.git' 'src/**/*.test.ts'
+ARTIFACT='.git'                 # the thing that should NOT appear
+TEST_GLOB='src/**/*.test.ts'    # tests to walk, one by one
+
+for test in $TEST_GLOB; do
+  rm -rf "$ARTIFACT"            # clean slate before each test
+  npm test -- "$test" >/dev/null 2>&1
+  if [ -e "$ARTIFACT" ]; then
+    echo "POLLUTER: $test created $ARTIFACT"
+    break
+  fi
+done
 ```
 
-Runs tests one-by-one, stops at first polluter. See script for usage.
+If running each test is slow, binary-search instead: run the first half of the list, check for the
+artifact, then recurse into whichever half reproduced it — `log2(N)` runs instead of `N`. The
+one-at-a-time loop above is the simplest correct version; reach for the bisection only when the full
+walk is too expensive.
 
 ## Real Example: Empty projectDir
 

@@ -212,8 +212,12 @@ Present a single consolidated result:
   or ESCALATE + what blocked it
 - **Verdict trail** available on request, not dumped
 
-After presenting a terminal `PASSED`/`PASSED_WITH_UNVERIFIED` result, delete the oracle file
-(I4 cleanup). On `ESCALATE`, leave it in place for resume/debug.
+### 7a. Cleanup (not optional)
+This is a step the run MUST execute, not a reminder. After presenting a terminal
+`PASSED`/`PASSED_WITH_UNVERIFIED` result, delete `.dispatch/<slug>.md` (I4 cleanup) — a stale
+oracle re-hydrated by a later run on the same slug silently seeds a corrupted contract. On
+`ESCALATE`, KEEP it: it is the resume/debug state. Do not end the run with a PASS result still on
+disk.
 
 If any phase ESCALATEs, stop and surface it — do not paper over a failure as success.
 
