@@ -29,9 +29,13 @@ the outcome.
 These exist because the orchestrator is prose you interpret, and interpretation drifts. They
 make any deviation visible and self-flagging.
 
-- **I1 — No substitution.** Run the workflows by their exact name (`Workflow({ name: 'research' })`,
-  etc.) *verbatim*. NEVER hand-roll a replacement script, inline the work yourself, or "adapt" a
-  workflow on the fly. If a named workflow looks mismatched to the task (wrong angles, wrong
+- **I1 — No substitution.** Run the workflows via the **Workflow tool** by their exact,
+  namespaced name (`Workflow({ name: 'cc-skills:research' })`, etc.) *verbatim*. The names are
+  plugin-namespaced — ALWAYS include the `cc-skills:` prefix. NEVER drop the namespace, and NEVER
+  invoke a phase through the **Skill tool** or a bare slash command (`/research`): a bare name
+  collides with the `cc-skills:research` slash skill and resolves to the wrong invocation path.
+  The Workflow tool with the namespaced name is the only correct path. NEVER hand-roll a
+  replacement script, inline the work yourself, or "adapt" a workflow on the fly. If a named workflow looks mismatched to the task (wrong angles, wrong
   domain), that is a **STOP-and-surface to the user** — tell them the mismatch and ask, do not
   improvise a substitute. (Fixing the workflow itself is a separate, explicit task.)
 - **I2 — No hand-execution.** The orchestrator produces ZERO solution output — no code, no edits,
@@ -69,15 +73,16 @@ don't pass `model` just to match the orchestrator.
 
 ### How to call (copy these — one line each)
 
-Call the **Workflow tool** with `name` + `args`. `name` is the verbatim workflow name (invariant
-I1). `args` is a JSON object; `criteria` and `guards` are **arrays of strings**, never one joined
-string. Pass each workflow ONLY its own fields (extra keys are ignored, missing required keys throw).
+Call the **Workflow tool** with `name` + `args`. `name` is the verbatim, namespaced workflow name
+(invariant I1 — always `cc-skills:`-prefixed). `args` is a JSON object; `criteria` and `guards` are
+**arrays of strings**, never one joined string. Pass each workflow ONLY its own fields (extra keys
+are ignored, missing required keys throw).
 
 ```
-Workflow({ name: 'research',           args: { goal, scopeIn, scopeOut, sourcesHint } })
-Workflow({ name: 'criteria-adversary', args: { goal, criteria: ['…','…'], guards: ['…'] } })
-Workflow({ name: 'ideate',             args: { goal, criteria: ['…','…'], guards: ['…'], constraints, researchSummary } })
-Workflow({ name: 'converge-execute',   args: { task, approach, criteria: ['…','…'], guards: ['…'], maxAttempts } })
+Workflow({ name: 'cc-skills:research',           args: { goal, scopeIn, scopeOut, sourcesHint } })
+Workflow({ name: 'cc-skills:criteria-adversary', args: { goal, criteria: ['…','…'], guards: ['…'] } })
+Workflow({ name: 'cc-skills:ideate',             args: { goal, criteria: ['…','…'], guards: ['…'], constraints, researchSummary } })
+Workflow({ name: 'cc-skills:converge-execute',   args: { task, approach, criteria: ['…','…'], guards: ['…'], maxAttempts } })
 ```
 
 Required (throws if missing/empty): research→`goal`; criteria-adversary & ideate→`goal,criteria`;
@@ -115,7 +120,7 @@ From the aiming grill, decide:
   orchestrator's own classification.
 - **Filter-lane** (uncertain goal, conflicting sources, or consequential approach) → full pipeline.
 
-### 3. Research  →  `Workflow({ name: 'research', args: { goal, scopeIn, scopeOut, sourcesHint } })`
+### 3. Research  →  `Workflow({ name: 'cc-skills:research', args: { goal, scopeIn, scopeOut, sourcesHint } })`
 Autonomous. Returns: keyFacts, **conflicts**, **gaps**, **stalenessFlags**, **spineHypothesis**.
 
 ### 4. Reconciliation grill (conditional)
@@ -129,7 +134,7 @@ Record the firing/skip in the ledger with its trigger pulled from the research r
 `SKIP reconciliation — research clean (0/0/0), goal crisp` — so the trigger is falsifiable
 against the workflow output rather than asserted.
 
-### 4b. Criteria stress-test (after criteria lock — cheap, autonomous)  →  `Workflow({ name: 'criteria-adversary', args: { goal, criteria, guards } })`
+### 4b. Criteria stress-test (after criteria lock — cheap, autonomous)  →  `Workflow({ name: 'cc-skills:criteria-adversary', args: { goal, criteria, guards } })`
 Fires on the **filter-lane only** (consequential, multi-line criteria) — this is the
 conditional-divergence gate, not a check bolted onto every run. Run it ONCE after the criteria are
 locked (whether or not the reconciliation grill fired) and BEFORE ideation/execution. Independent
@@ -148,7 +153,7 @@ gameable criterion is a false target no verifier can catch (root-seam errors amp
   single-line filter, no guards`; skip ONLY when the locked filter is a single criterion with no
   guards. The Goodhart risk lives in consequential, multi-line filters.
 
-### 5. Ideation (conditional)  →  `Workflow({ name: 'ideate', args: { goal, criteria, guards, constraints, researchSummary } })`
+### 5. Ideation (conditional)  →  `Workflow({ name: 'cc-skills:ideate', args: { goal, criteria, guards, constraints, researchSummary } })`
 Run ONLY if the **approach** is uncertain and consequential. If the approach is obvious from
 the locked criteria, skip — don't ideate on a settled design.
 Returns ranked candidates + a recommendation + `decisionNeeded`.
@@ -161,7 +166,7 @@ and the key tradeoff, but don't block.
 tradeoff forces it `true`, so the judge's self-rating can only confirm a clean auto-select —
 never suppress a value-laden one.)
 
-### 6. Converge & execute  →  `Workflow({ name: 'converge-execute', args: { task, approach, criteria, guards, maxAttempts } })`
+### 6. Converge & execute  →  `Workflow({ name: 'cc-skills:converge-execute', args: { task, approach, criteria, guards, maxAttempts } })`
 Autonomous. Implements → runs the project's **real signal** (tests/lint) as ground truth →
 skeptics do per-criterion, evidence-backed checks against criteria+guards → loops → returns one of:
 `PASSED` (with solution), `PASSED_WITH_UNVERIFIED` (cleared, but some non-guard criterion lines had
