@@ -25,6 +25,7 @@ ccburn_json=$(ccburn session --json --once 2>/dev/null)
 sess_util=$(echo "$ccburn_json"     | jq -r '.limits.session.utilization // empty')
 proj_end=$(echo "$ccburn_json"      | jq -r '.projection.projected_end_pct // empty')
 sess_resets_min=$(echo "$ccburn_json" | jq -r '.limits.session.resets_in_minutes // empty')
+sess_mins_to_100=$(echo "$ccburn_json" | jq -r '.burn_rate.estimated_minutes_to_100 // empty')
 
 weekly_util=$(echo "$ccburn_json"       | jq -r '.limits.weekly.utilization // empty')
 weekly_resets_hrs=$(echo "$ccburn_json" | jq -r '.limits.weekly.resets_in_hours // empty')
@@ -94,12 +95,10 @@ if [ -n "$sess_util" ]; then
   if [ -n "$proj_end" ]; then
     proj_int=$(awk -v p="$proj_end" 'BEGIN { printf "%.0f", p }')
     if [ "$proj_int" -ge 100 ] && [ -n "$sess_resets_min" ]; then
-      # Will hit limit before reset — compute how long we'll be blocked
-      wait_display=$(awk -v u="$sess_util" -v p="$proj_end" -v r="$sess_resets_min" 'BEGIN {
-        rate = (p/100 - u) / r
-        if (rate > 0) {
-          t100 = (1.0 - u) / rate
-          wait = r - t100
+      # Will hit limit before reset — wait = time_until_reset - time_until_100
+      wait_display=$(awk -v r="$sess_resets_min" -v t="${sess_mins_to_100:-}" 'BEGIN {
+        if (t != "" && t > 0) {
+          wait = r - t
           if (wait < 0) wait = 0
           mi = int(wait + 0.5); h = int(mi / 60); rm = mi % 60
           if (h > 0) printf "%dh %dm", h, rm
